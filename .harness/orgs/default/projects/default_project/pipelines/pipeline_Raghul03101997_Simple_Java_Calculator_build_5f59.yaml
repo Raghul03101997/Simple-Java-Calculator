@@ -1,0 +1,56 @@
+pipeline:
+  id: pipeline_Raghul03101997_Simple_Java_Calculator_build_5f59
+  name: pipeline_Raghul03101997_Simple_Java_Calculator_build_5f59
+  stages:
+    - name: Build and Test
+      id: build_test
+      runtime: cloud
+      platform:
+        os: linux
+        arch: amd64
+      clone:
+        enabled: true
+      cache:
+        enabled: true
+      steps:
+        - name: Compile and Test
+          id: compile_and_test
+          run:
+            shell: bash
+            script: |-
+              echo "Java version:"
+              java -version
+              echo ""
+
+              # Create directories
+              mkdir -p build/classes build/test/classes lib .harness/reports
+
+              # Compile source
+              echo "Compiling source..."
+              find src/simplejavacalculator -name "*.java" > sources.txt
+              javac -d build/classes @sources.txt
+
+              # Download JUnit Platform Console Standalone
+              echo "Downloading JUnit Platform..."
+              curl -sL -o lib/junit-platform-console-standalone.jar \
+                https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+
+              # Compile test sources
+              echo "Compiling tests..."
+              find src/simplejavacalculatorTest -name "*.java" > test-sources.txt
+              javac -cp build/classes:lib/junit-platform-console-standalone.jar \
+                -d build/test/classes @test-sources.txt
+
+              # Run tests with JUnit Console Launcher
+              echo "Running tests..."
+              java -jar lib/junit-platform-console-standalone.jar \
+                --class-path build/classes:build/test/classes \
+                --scan-class-path \
+                --reports-dir=.harness/reports \
+                --details=verbose
+            report:
+              type: junit
+              paths:
+                - .harness/reports/TEST-junit-jupiter.xml
+  tags:
+    onboarding: "true"
